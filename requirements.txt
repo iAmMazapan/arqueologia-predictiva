@@ -8,13 +8,9 @@ geopandas
 shapely
 fiona
 pyproj
-rasterio     # Esencial para la Fase 2 del Plan Maestro
+rasterio
 
-# --- Machine Learning ---
-scikit-learn
-xgboost      # El algoritmo principal según el Plan Maestro
-numpy
-
-# --- Utilidades ---
-pathlib
-tqdm         # Para ver barras de progreso en tus scripts de descarga
+# --- Notebooks y Visualización ---
+jupyter
+notebook
+matplotlib
