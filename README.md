@@ -3,7 +3,7 @@
 ## Resumen del Proyecto
 [cite_start]Este proyecto desarrolla un modelo de **Machine Learning (XGBoost)** diseñado para estimar la probabilidad matemática de presencia de restos arqueológicos en un área determinada[cite: 3, 65]. [cite_start]El sistema utiliza un enfoque de **"Rasterización Previa"** para optimizar el procesamiento de grandes volúmenes de datos geográficos de las Cartas Nacionales[cite: 4, 5].
 
-## 🛠️ Metodología (Sprint 10 Días)
+## 🛠️ Metodología 
 [cite_start]Basado en el **Plan Maestro de Riesgo Arqueológico**[cite: 2]:
 
 1. [cite_start]**Ingesta de Datos:** Scripts automatizados para la descarga y unificación de Cartas Nacionales (Vectores de ríos, curvas, etc.)[cite: 8, 27].
