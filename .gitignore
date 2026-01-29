@@ -1,0 +1,20 @@
+# Datos pesados (Big Data)
+data/raw/
+data/processed/
+*.tif
+*.shp
+*.gpkg
+
+# Archivos auxiliares de QGIS y Raster
+*.aux.xml
+*.qgz
+*.cpg
+*.dbf
+*.prj
+*.shx
+
+# Entorno virtual y Python
+venv/
+__pycache__/
+.ipynb_checkpoints/
+.DS_Store
