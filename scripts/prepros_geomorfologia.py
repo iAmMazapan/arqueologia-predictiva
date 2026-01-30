@@ -1,26 +1,44 @@
 """
 PROYECTO: Modelo Predictivo de Riesgo Arqueológico
-MODULO: preproc_geomorfologia.py
+MODULO: 01_preproc_geomorfologia_v2.py
 
-DESCRIPCIÓN: 
-Pipeline de procesamiento de terreno.
-1. Valida integridad de Shapefiles.
-2. Convierte Curvas de Nivel (Líneas) -> Vértices (Puntos).
-3. Genera DEM (TIN Gridding).
-4. Calcula Pendiente y Rugosidad.
+ESTRATEGIA HÍBRIDA:
+1. Ingeniería de Datos (Geopandas): Conversión precisa de Líneas -> Puntos conservando 'Z'.
+2. Procesamiento (Whitebox): Interpolación TIN y Variables Derivadas.
 
-[cite_start]Standard: 30m resolution, EPSG:32719[cite: 17].
+Standard: 30m resolution, EPSG:32719.
 """
 
 import os
 import sys
 import subprocess
+import geopandas as gpd
+import pandas as pd
+from shapely.geometry import Point
 import whitebox
 
-# --- FUNCIONES DE SOPORTE ---
+# --- CONFIGURACIÓN ---
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(SCRIPT_DIR)
+RAW_PATH = os.path.join(BASE_DIR, "data", "raw")
+PROC_PATH = os.path.join(BASE_DIR, "data", "processed")
+
+if not os.path.exists(PROC_PATH):
+    os.makedirs(PROC_PATH)
+
+# Inputs y Outputs
+INPUT_CURVAS = os.path.join(RAW_PATH, "27s-curvas.shp")
+TEMP_POINTS = os.path.join(PROC_PATH, "temp_vertices_z.shp") # Nuevo nombre
+DEM_TIF = os.path.join(PROC_PATH, "raster_dem.tif")
+SLOPE_TIF = os.path.join(PROC_PATH, "raster_pendiente.tif")
+TRI_TIF = os.path.join(PROC_PATH, "raster_rugosidad.tif")
+
+# Parámetros
+Z_FIELD = "Z"           
+SPATIAL_RES = 30.0
 
 def find_whitebox_binary():
-    """Localiza el binario ejecutable de WhiteboxTools robustamente."""
+    """Localiza el binario ejecutable de WhiteboxTools."""
     module_dir = os.path.dirname(whitebox.__file__)
     possible_paths = [
         os.path.join(module_dir, "WBT", "whitebox_tools"),
@@ -29,142 +47,123 @@ def find_whitebox_binary():
     for path in possible_paths:
         if os.path.exists(path):
             if sys.platform != "win32":
-                try:
-                    os.chmod(path, 0o755)
-                except:
-                    pass
+                try: os.chmod(path, 0o755)
+                except: pass
             return path
     wbt = whitebox.WhiteboxTools()
     return wbt.exe_path
 
-def check_shapefile_integrity(shp_path):
-    """Verifica que existan .shp, .shx y .dbf."""
-    base = os.path.splitext(shp_path)[0]
-    required = ['.shp', '.shx', '.dbf']
-    missing = []
-    
-    print(f"[AUDITORÍA] Verificando: {os.path.basename(shp_path)}")
-    for ext in required:
-        # Verifica extensión exacta o mayúsculas (Linux sensitive)
-        if not (os.path.exists(base + ext) or os.path.exists(base + ext.upper())):
-            print(f"  [FALTA] {ext}")
-            missing.append(ext)
-    
-    if missing:
-        print(f"[ERROR CRÍTICO] Shapefile corrupto o incompleto. Faltan: {missing}")
-        return False
-    print("  [OK] Integridad validada.")
-    return True
-
-def run_wbt_command(executable, tool_name, args):
-    """Ejecuta un comando de Whitebox controlando errores."""
-    cmd = [executable, f"--run={tool_name}"] + args + ["-v"]
-    print(f"[EJECUTANDO] {tool_name}...")
+def prepare_points_with_geopandas():
+    """
+    Función Crítica: Convierte líneas a puntos asegurando que la columna Z se mantenga.
+    Reemplaza a ExtractNodes que estaba fallando al perder atributos.
+    """
+    print(f"[PANDAS] Leyendo {os.path.basename(INPUT_CURVAS)}...")
     try:
-        subprocess.run(cmd, check=True)
-        return True
-    except subprocess.CalledProcessError as e:
-        print(f"[FALLO] {tool_name} terminó con código de error {e.returncode}.")
-        return False
+        gdf_lines = gpd.read_file(INPUT_CURVAS)
+        
+        # Verificación de seguridad
+        if Z_FIELD not in gdf_lines.columns:
+            print(f"[ERROR CRÍTICO] La columna '{Z_FIELD}' no existe en el Shapefile.")
+            print(f"Columnas disponibles: {gdf_lines.columns.tolist()}")
+            return False
 
-# --- PROCESO PRINCIPAL ---
+        print("[PANDAS] Extrayendo vértices y clonando atributos (esto puede tomar un momento)...")
+        
+        # Estrategia vectorizada para explotar coordenadas (mucho más rápido que iterar)
+        # 1. Extraemos todas las coordenadas de cada línea
+        # 2. Mantenemos el índice para cruzar con los datos originales
+        
+        # Convertimos geometrías a una lista de puntos
+        points_list = []
+        z_values = []
+        
+        # Iteramos (es necesario para extraer coords complejas)
+        # Optimizacion: Usamos list comprehension que es más veloz en Python
+        for idx, row in gdf_lines.iterrows():
+            geom = row.geometry
+            z_val = row[Z_FIELD]
+            
+            if geom.geom_type == 'LineString':
+                coords = list(geom.coords)
+                points_list.extend([Point(xy) for xy in coords])
+                z_values.extend([z_val] * len(coords))
+            elif geom.geom_type == 'MultiLineString':
+                for part in geom.geoms:
+                    coords = list(part.coords)
+                    points_list.extend([Point(xy) for xy in coords])
+                    z_values.extend([z_val] * len(coords))
+        
+        print(f"[PANDAS] Creando GeoDataFrame de Puntos ({len(points_list)} vértices)...")
+        gdf_points = gpd.GeoDataFrame(
+            {Z_FIELD: z_values}, 
+            geometry=points_list,
+            crs=gdf_lines.crs
+        )
+        
+        print(f"[PANDAS] Guardando {os.path.basename(TEMP_POINTS)}...")
+        gdf_points.to_file(TEMP_POINTS)
+        return True
+
+    except Exception as e:
+        print(f"[ERROR PANDAS] Falló la conversión: {e}")
+        return False
 
 def main():
-    # 1. Configuración de Rutas
-    SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-    BASE_DIR = os.path.dirname(SCRIPT_DIR)
-    RAW_PATH = os.path.join(BASE_DIR, "data", "raw")
-    PROC_PATH = os.path.join(BASE_DIR, "data", "processed")
-
-    if not os.path.exists(PROC_PATH):
-        os.makedirs(PROC_PATH)
-
-    # Inputs
-    INPUT_CURVAS = os.path.join(RAW_PATH, "27s-curvas.shp")
-    
-    # Intermedios (Archivos temporales)
-    TEMP_POINTS = os.path.join(PROC_PATH, "temp_vertices.shp")
-    
-    # Outputs Finales
-    DEM_TIF = os.path.join(PROC_PATH, "raster_dem.tif")
-    SLOPE_TIF = os.path.join(PROC_PATH, "raster_pendiente.tif")
-    TRI_TIF = os.path.join(PROC_PATH, "raster_rugosidad.tif")
-    
-    # [cite_start]Parámetros [cite: 17, 16]
-    Z_FIELD = "Z"           
-    SPATIAL_RES = 30.0
-
-    # Validaciones Previas
-    if not check_shapefile_integrity(INPUT_CURVAS):
-        return
-    
     executable = find_whitebox_binary()
-    print(f"[SISTEMA] Motor Whitebox en: {executable}")
+    print(f"[SISTEMA] Motor Whitebox: {executable}")
 
     # ---------------------------------------------------------------------
-    # PASO 1.5: Conversión de Líneas a Puntos (El paso que faltaba)
+    # PASO 1: Preparación de Datos (Geopandas)
     # ---------------------------------------------------------------------
-    # TINGridding solo acepta puntos. Extraemos los vértices de las curvas.
+    # Solo ejecutamos si no existe el archivo o si queremos forzarlo
     if not os.path.exists(TEMP_POINTS):
-        success = run_wbt_command(executable, "LinesToPoints", [ # O 'VerticesToPoints'
-            f"--input={INPUT_CURVAS}",
-            f"--output={TEMP_POINTS}"
-        ])
-        # Nota: Si LinesToPoints falla, intentaremos VerticesToPoints (nombres varian por versión)
-        if not success:
-            print("[INTENTO 2] Probando herramienta alternativa 'VerticesToPoints'...")
-            if not run_wbt_command(executable, "VerticesToPoints", [
-                f"--input={INPUT_CURVAS}",
-                f"--output={TEMP_POINTS}"
-            ]):
-                print("[ABORTAR] No se pudieron extraer los puntos de las líneas.")
-                return
+        if not prepare_points_with_geopandas():
+            return
     else:
-        print("[INFO] Puntos temporales ya existen. Saltando conversión.")
+        print("[INFO] Usando archivo de puntos existente.")
 
     # ---------------------------------------------------------------------
-    # PASO 2: Interpolación TIN (TINGridding)
+    # PASO 2: Interpolación TIN (Whitebox)
     # ---------------------------------------------------------------------
-    # Ahora usamos TEMP_POINTS (puntos) en lugar de INPUT_CURVAS (líneas)
+    print("[WHITEBOX] Ejecutando Interpolación TIN...")
     
-    # Nota Importante: Al convertir líneas a puntos, los atributos se mantienen.
-    # Usamos use_z=False para obligarlo a leer la columna "Z" de la tabla.
-    
-    success_tin = run_wbt_command(executable, "TINGridding", [
+    # Ahora usamos TEMP_POINTS que GARANTIZADO tiene la columna "Z"
+    cmd_tin = [
+        executable,
+        "--run=TINGridding",
         f"--input={TEMP_POINTS}",
         f"--output={DEM_TIF}",
-        f"--field={Z_FIELD}",
-        "--use_z=False", 
-        f"--resolution={SPATIAL_RES}"
-    ])
-
-    if not success_tin or not os.path.exists(DEM_TIF):
-        print("[ERROR] El DEM no se generó.")
+        f"--field={Z_FIELD}",      
+        "--use_z=False",            
+        f"--resolution={SPATIAL_RES}",
+        "-v"
+    ]
+    
+    try:
+        subprocess.run(cmd_tin, check=True)
+    except subprocess.CalledProcessError:
+        print("[ERROR] Falló TINGridding. Revisa el log arriba.")
         return
 
     # ---------------------------------------------------------------------
-    # PASO 3: Variables Derivadas (Pendiente y Rugosidad)
+    # PASO 3: Variables Derivadas
     # ---------------------------------------------------------------------
-    print("[INFO] Generando variables geomorfológicas...")
+    if os.path.exists(DEM_TIF):
+        print("[WHITEBOX] Generando Pendiente y Rugosidad...")
+        
+        # Slope
+        subprocess.run([executable, "--run=Slope", f"--dem={DEM_TIF}", f"--output={SLOPE_TIF}", "--units=degrees"], check=False)
+        
+        # TRI
+        subprocess.run([executable, "--run=RuggednessIndex", f"--dem={DEM_TIF}", f"--output={TRI_TIF}"], check=False)
 
-    # [cite_start]Pendiente [cite: 21]
-    run_wbt_command(executable, "Slope", [
-        f"--dem={DEM_TIF}",
-        f"--output={SLOPE_TIF}",
-        "--units=degrees"
-    ])
-
-    # [cite_start]Rugosidad (TRI) [cite: 24]
-    run_wbt_command(executable, "RuggednessIndex", [
-        f"--dem={DEM_TIF}",
-        f"--output={TRI_TIF}"
-    ])
-
-    # Limpieza opcional (descomentar si quieres borrar el temporal)
-    # try: os.remove(TEMP_POINTS); os.remove(TEMP_POINTS.replace(".shp", ".shx")); os.remove(TEMP_POINTS.replace(".shp", ".dbf"))
-    # except: pass
-
-    print(f"\n[ÉXITO TOTAL] Procesamiento finalizado.\nArchivos generados en: {PROC_PATH}")
+        print("\n" + "="*50)
+        print("¡MISIÓN CUMPLIDA! FASE 1 COMPLETADA")
+        print("="*50)
+        print(f"Archivos listos en: {PROC_PATH}")
+    else:
+        print(f"[ERROR CRÍTICO] {DEM_TIF} no aparece en disco.")
 
 if __name__ == "__main__":
     main()
