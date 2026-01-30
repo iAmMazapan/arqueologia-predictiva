@@ -9,6 +9,7 @@ shapely
 fiona
 pyproj
 rasterio
+whitebox
 
 # --- Notebooks y Visualización ---
 jupyter
