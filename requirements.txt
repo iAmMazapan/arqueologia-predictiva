@@ -16,3 +16,10 @@ jupyter
 notebook
 matplotlib
 seaborn
+
+
+# --- Motor de Procesamiento Raster
+
+gdal 
+numpy
+scipy
