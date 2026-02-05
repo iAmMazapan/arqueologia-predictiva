@@ -16,7 +16,7 @@ jupyter
 notebook
 matplotlib
 seaborn
-
+nbstripout
 
 # --- Motor de Procesamiento Raster
 
