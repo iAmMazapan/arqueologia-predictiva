@@ -11,15 +11,20 @@ pyproj
 rasterio
 whitebox
 
-# --- Notebooks y Visualización ---
+# --- Matemáticas y Procesamiento ---
+numpy
+scipy
+gdal
+
+# --- Inteligencia Artificial y Machine Learning ---
+scikit-learn
+xgboost
+joblib
+
+# --- Visualización y Notebooks ---
 jupyter
 notebook
 matplotlib
 seaborn
+tqdm
 nbstripout
-
-# --- Motor de Procesamiento Raster
-
-gdal 
-numpy
-scipy
