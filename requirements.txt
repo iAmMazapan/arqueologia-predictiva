@@ -5,6 +5,7 @@ urllib3
 # --- Manipulación de Datos y GIS ---
 pandas
 geopandas
+contextily
 shapely
 fiona
 pyproj
