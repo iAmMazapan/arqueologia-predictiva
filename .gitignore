@@ -4,6 +4,11 @@ data/processed/
 *.tif
 *.shp
 *.gpkg
+*.zip
+
+# Modelos serializados
+*.pkl
+*.joblib
 
 # Archivos auxiliares de QGIS y Raster
 *.aux.xml
