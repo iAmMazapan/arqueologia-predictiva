@@ -4,7 +4,6 @@
 **Proyecto:** Modelo Predictivo de Potencial Arqueológico — Perú  
 **Fecha:** 11 de febrero de 2026  
 **Autor:** Yishar Piero Nieto Barrientos  
-**Dirigido a:** Equipo de dirección del proyecto
 
 ---
 
@@ -103,15 +102,15 @@ En la v1, este proceso se aplicó a 7 capas y tomó **2 semanas corriendo**. Par
 
 Estas variables se calculan matemáticamente a partir del modelo de elevación que ya tenemos. No requieren datos externos nuevos.
 
-| # | Variable | ¿Qué mide? | ¿Por qué importa arqueológicamente? | Tiempo |
-|:-:|----------|-------------|--------------------------------------|:------:|
-| 1 | Altitud / Pisos ecológicos | Altura sobre el nivel del mar, clasificada en regiones naturales | Los asentamientos se distribuyen según pisos ecológicos (costa, quechua, puna), cada uno con estrategias de subsistencia distintas | 1.5 días |
-| 2 | Aspecto (orientación solar) | Hacia dónde "mira" la ladera (norte, sur, este, oeste) | En el hemisferio sur, las laderas orientadas al norte reciben más sol. Las viviendas prehispánicas preferían estas orientaciones | 1 día |
-| 3 | Curvatura del terreno | Si el terreno es cóncavo (cuenca), convexo (cresta) o plano | Identifica terrazas naturales aptas para construcción vs. crestas expuestas | 1 día |
-| 4 | TPI (Posición Topográfica) | Si un punto está en un valle, ladera, cresta o espolón respecto a su entorno | Identifica cimas y espolones (sitios defensivos) y fondos de valle (sitios agrícolas). Directamente señalado en el feedback arqueológico | 2 días |
-| 5 | TWI (Humedad Topográfica) | Dónde se acumula el agua en el terreno según la forma del relieve | Proxy de disponibilidad de agua sin necesitar datos hidrológicos adicionales. El agua es el factor #1 del urbanismo prehispánico | 2 días |
+| # | Variable | ¿Qué mide? | ¿Por qué importa arqueológicamente? | Archivo raster | Tiempo |
+|:-:|----------|-------------|--------------------------------------|----------------|:------:|
+| 1 | Altitud / Pisos ecológicos | Altura sobre el nivel del mar, clasificada en regiones naturales | Los asentamientos se distribuyen según pisos ecológicos (costa, quechua, puna), cada uno con estrategias de subsistencia distintas | `altitud.tif` / `pisos_ecologicos.tif` | 1.5 días |
+| 2 | Aspecto (orientación solar) | Hacia dónde "mira" la ladera (norte, sur, este, oeste) | En el hemisferio sur, las laderas orientadas al norte reciben más sol. Las viviendas prehispánicas preferían estas orientaciones | `aspecto.tif` | 1 día |
+| 3 | Curvatura del terreno | Si el terreno es cóncavo (cuenca), convexo (cresta) o plano | Identifica terrazas naturales aptas para construcción vs. crestas expuestas | `curvatura.tif` | 1 día |
+| 4 | TPI (Posición Topográfica) | Si un punto está en un valle, ladera, cresta o espolón respecto a su entorno | Identifica cimas y espolones (sitios defensivos) y fondos de valle (sitios agrícolas). Directamente señalado en el feedback arqueológico | `tpi.tif` | 2 días |
+| 5 | TWI (Humedad Topográfica) | Dónde se acumula el agua en el terreno según la forma del relieve | Proxy de disponibilidad de agua sin necesitar datos hidrológicos adicionales. El agua es el factor #1 del urbanismo prehispánico | `twi.tif` | 2 días |
 
-| | **Subtotal Bloque 1** | | | **~8 días** |
+| | **Subtotal Bloque 1** | | | | **~8 días** |
 |:-:|:-:|:-:|:-:|:-:|
 
 > **Incluye:** cálculo + validación visual + integración al dataset + reentrenamiento del modelo.
@@ -122,27 +121,27 @@ Estas variables se calculan matemáticamente a partir del modelo de elevación q
 
 Requieren descargar, limpiar y procesar datasets de instituciones peruanas o internacionales.
 
-| # | Variable | Fuente | ¿Por qué importa? | Tiempo |
-|:-:|----------|--------|-------------------|:------:|
-| 6 | Ecotonos (bordes entre ecosistemas) | ESA WorldCover (acceso libre, 10m resolución) | Los asentamientos se ubican en la frontera entre dos ecosistemas para acceder a recursos de ambos | 3–4 días |
-| 7 | Distancia a confluencias de ríos | Red hídrica ANA / HydroSHEDS | Las confluencias son puntos estratégicos de control territorial y acceso a agua | 2–3 días |
-| 8 | Pasos de montaña (abras) | Derivado del DEM con análisis topográfico avanzado | Puntos de control obligatorio en las rutas costa–sierra | 3–4 días |
-| 9 | Litología (tipo de roca) | Mapa Geológico del INGEMMET | Proximidad a canteras de piedra, recurso clave para construcción monumental | 2–3 días |
+| # | Variable | Fuente | ¿Por qué importa? | Archivo raster | Tiempo |
+|:-:|----------|--------|-------------------|----------------|:------:|
+| 6 | Ecotonos (bordes entre ecosistemas) | ESA WorldCover (acceso libre, 10m resolución) | Los asentamientos se ubican en la frontera entre dos ecosistemas para acceder a recursos de ambos | `ecotonos.tif` | 3–4 días |
+| 7 | Distancia a confluencias de ríos | Red hídrica ANA / HydroSHEDS | Las confluencias son puntos estratégicos de control territorial y acceso a agua | `distancia_confluencias.tif` | 2–3 días |
+| 8 | Pasos de montaña (abras) | Derivado del DEM con análisis topográfico avanzado | Puntos de control obligatorio en las rutas costa–sierra | `pasos_montana.tif` | 3–4 días |
+| 9 | Litología (tipo de roca) | Mapa Geológico del INGEMMET | Proximidad a canteras de piedra, recurso clave para construcción monumental | `litologia.tif` | 2–3 días |
 
-| | **Subtotal Bloque 2** | | | **~10–14 días** |
+| | **Subtotal Bloque 2** | | | | **~10–14 días** |
 |:-:|:-:|:-:|:-:|:-:|
 
 ---
 
 ### Bloque 3 — Variables avanzadas (selectivo, si hay tiempo)
 
-| # | Variable | Complejidad | Tiempo |
-|:-:|----------|:-----------:|:------:|
-| 10 | Análisis de visibilidad (viewshed) | Alta — computacionalmente pesado | 5–7 días |
-| 11 | Clasificación geomorfológica (terrazas, conos aluviales) | Alta — requiere criterio experto | 5–7 días |
-| 12 | Proximidad a manantiales/puquios | Media — depende de disponibilidad de datos | 4–5 días |
+| # | Variable | Complejidad | Archivo raster | Tiempo |
+|:-:|----------|:-----------:|----------------|:------:|
+| 10 | Análisis de visibilidad (viewshed) | Alta — computacionalmente pesado | `viewshed.tif` | 5–7 días |
+| 11 | Clasificación geomorfológica (terrazas, conos aluviales) | Alta — requiere criterio experto | `geomorfologia.tif` | 5–7 días |
+| 12 | Proximidad a manantiales/puquios | Media — depende de disponibilidad de datos | `distancia_manantiales.tif` | 4–5 días |
 
-| | **Subtotal Bloque 3** | | **~14–19 días** |
+| | **Subtotal Bloque 3** | | | **~14–19 días** |
 |:-:|:-:|:-:|:-:|
 
 ---
@@ -174,17 +173,6 @@ Con ~12 variables ambientales bien procesadas, el modelo tendría fundamento amb
 
 ---
 
-## 7. Compromiso
-
-Me comprometo a:
-- Entregar avances semanales con métricas verificables.
-- Documentar cada variable nueva con su fuente, método de cálculo y validación.
-- Mantener un código reproducible y organizado para la publicación.
-- Comunicar inmediatamente cualquier bloqueo técnico o de datos.
-
-Solo pido el tiempo necesario para hacer un trabajo que resista el escrutinio de una revisión científica.
-
----
 
 *"Without data cleaning, the most sophisticated algorithm is just an expensive random number generator."*  
 — Principio fundamental de Machine Learning aplicado
