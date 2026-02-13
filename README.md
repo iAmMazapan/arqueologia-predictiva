@@ -75,18 +75,31 @@ arqueologia-predictiva/
 
 ### v1 (actual)
 
-| Variable | Tipo | Fuente |
-|----------|------|--------|
-| Pendiente (°) | Topográfica | DEM ASTER 30m |
-| Rugosidad (TRI) | Topográfica | DEM ASTER 30m |
-| Distancia a ríos (m) | Hidrológica | ANA / HydroSHEDS |
-| Distancia a lagos (m) | Hidrológica | ANA / HydroSHEDS |
-| Distancia al Qhapaq Ñan (m) | Cultural | Ministerio de Cultura |
-| Distancia a sitios G1/G2/G3 (m) | Cultural | Ministerio de Cultura |
+| Variable | Tipo | Fuente | Archivo raster |
+|----------|------|--------|----------------|
+| Pendiente (°) | Topográfica | DEM ASTER 30m | `pendiente.tif` |
+| Rugosidad (TRI) | Topográfica | DEM ASTER 30m | `rugosidad.tif` |
+| Distancia a ríos (m) | Hidrológica | ANA / HydroSHEDS | `distancia_rios.tif` |
+| Distancia a lagos (m) | Hidrológica | ANA / HydroSHEDS | `distancia_lagos.tif` |
+| Distancia al Qhapaq Ñan (m) | Cultural | Ministerio de Cultura | `distancia_qhapaq_nan.tif` |
+| Distancia a sitios G1 (m) | Cultural | Ministerio de Cultura | `distancia_g1.tif` |
+| Distancia a sitios G2 (m) | Cultural | Ministerio de Cultura | `distancia_g2.tif` |
+| Distancia a sitios G3 (m) | Cultural | Ministerio de Cultura | `distancia_g3.tif` |
 
 ### v2 (en desarrollo)
 
-Altitud, pisos ecológicos, aspecto solar, curvatura, TPI, TWI, ecotonos, confluencias, litología.
+| Variable | Tipo | Fuente | Archivo raster | Derivado de |
+|----------|------|--------|----------------|-------------|
+| Altitud (m.s.n.m.) | Topográfica | DEM ASTER 30m | `altitud.tif` | `dem.tif` |
+| Pisos ecológicos (clasificación) | Topográfica | Reclasificación de altitud | `pisos_ecologicos.tif` | `altitud.tif` |
+| Aspecto / orientación solar (°) | Topográfica | DEM ASTER 30m | `aspecto.tif` | `dem.tif` |
+| Curvatura del terreno | Topográfica | DEM ASTER 30m | `curvatura.tif` | `dem.tif` |
+| TPI — Índice de Posición Topográfica | Topográfica | DEM ASTER 30m | `tpi.tif` | `dem.tif` |
+| TWI — Índice de Humedad Topográfica | Topográfica | DEM ASTER 30m | `twi.tif` | `dem.tif` |
+| Ecotonos (bordes entre ecosistemas) | Ambiental | ESA WorldCover 10m | `ecotonos.tif` | Descarga externa |
+| Distancia a confluencias de ríos (m) | Hidrológica | ANA / HydroSHEDS | `distancia_confluencias.tif` | Red hídrica |
+| Pasos de montaña / abras | Topográfica | Análisis topográfico avanzado | `pasos_montana.tif` | `dem.tif` |
+| Litología (tipo de roca) | Geológica | INGEMMET — Mapa Geológico | `litologia.tif` | Descarga externa |
 
 ---
 
